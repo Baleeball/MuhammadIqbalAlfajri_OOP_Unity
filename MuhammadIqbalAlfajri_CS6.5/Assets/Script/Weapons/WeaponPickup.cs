@@ -1,75 +1,100 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class WeaponPickup : MonoBehaviour
 {
-    [SerializeField] private Weapon weaponHolder; // The player's weapon holder
-    [SerializeField] private Weapon weapon;       // The weapon to be picked up
+    [SerializeField] Weapon weaponHolder;
 
-    [SerializeField] private SpriteRenderer weaponSpriteRenderer; // The SpriteRenderer component
-    [SerializeField] private Animator weaponAnimator;            // The Animator component
+    Weapon weapon;
 
-    private void Awake()
+    // Spawn WeaponHolder Object when the game start
+    void Awake()
     {
-        if (weapon != null)
-        {
-            // Hide the weapon visuals initially
-            TurnVisual(false);
-        }
+        if (weaponHolder != null)
+            weapon = Instantiate(weaponHolder);
     }
 
-    private void Start()
+    // Set default value for weaponHolder
+    void Start()
     {
-        // Ensure that visuals are turned off initially
+        // if no weaponHolder provided, dont do anything
+        if (weapon == null)
+            return;
+
+        // TurnVisual so the weapon sprites doesnt crash with weapon pickup sprites
         TurnVisual(false);
+
+        // Turn off the functionality of weapon
+        weapon.enabled = false;
+        // Make the weapon object to be children of weaponHolder
+        weapon.transform.SetParent(transform, false);
+        // Match the parent positions
+        weapon.transform.localPosition = transform.position;
+
+        // save transform to reset the position
+        weapon.parentTransform = transform;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    // Ini kalo misal si objek weapon pickup "kena" objek Player, masukin slot weapon yang ada di weaponHolder ke slot Weapon si Player
+    void OnTriggerEnter2D(Collider2D other)
     {
-        // Check if the colliding object is the player
-        if (other.CompareTag("Player"))
+        // Trigger itu bisa ke semua objek, jadi harus cari si Player
+        if (weapon != null && other.gameObject.CompareTag("Player"))
         {
-            // Equip the weapon to the player's weapon holder
-            if (weaponHolder != null && weapon != null)
+            Weapon playerWeapon = other.gameObject.GetComponentInChildren<Weapon>();
+
+            // Kalo misal slot Weapon si Player udah penuh (udah ada Weapon)
+            // Maka tuker Weapon yang baru disentuh sama Weapon yang ada di slot
+            // Kalo mau liat cara kerjanya bisa tambahin aja objek WeaponPickup
+            // di WeaponRack terus bedain posisi antar dua Weapon
+            if (playerWeapon != null)
             {
-                AssignWeaponToHolder();
-                TurnVisual(true);
+                playerWeapon.transform.SetParent(playerWeapon.parentTransform);
+                playerWeapon.transform.localScale = new(1, 1);
+                playerWeapon.transform.localPosition = new(0, 0);
 
-                // Destroy the pickup object after collecting the weapon
-                Destroy(gameObject);
+                TurnVisual(false, playerWeapon);
             }
+
+            weapon.enabled = true;
+            weapon.transform.SetParent(other.transform, false);
+
+            TurnVisual(true);
+
+            weapon.transform.localPosition = new(0.0f, 0.0f);
         }
     }
 
-    // Method to enable or disable weapon visuals
-    private void TurnVisual(bool isActive)
+    void TurnVisual(bool on)
     {
-        if (weaponSpriteRenderer != null)
-            weaponSpriteRenderer.enabled = isActive;
+        if (on)
+        {
+            weapon.GetComponent<SpriteRenderer>().enabled = true;
+            weapon.GetComponent<Animator>().enabled = true;
+            weapon.GetComponent<Weapon>().enabled = true;
+        }
+        else
+        {
+            weapon.GetComponent<SpriteRenderer>().enabled = false;
+            weapon.GetComponent<Animator>().enabled = false;
+            weapon.GetComponent<Weapon>().enabled = false;
+        }
 
-        if (weaponAnimator != null)
-            weaponAnimator.enabled = isActive;
     }
 
-    // Method to assign the weapon's sprite and animation to the weapon holder
-    private void AssignWeaponToHolder()
+    void TurnVisual(bool on, Weapon weapon)
     {
-        // Copy the sprite to the player's weapon holder
-        SpriteRenderer holderSpriteRenderer = weaponHolder.GetComponent<SpriteRenderer>();
-        if (holderSpriteRenderer != null && weaponSpriteRenderer != null)
+        if (on)
         {
-            holderSpriteRenderer.sprite = weaponSpriteRenderer.sprite;
+            weapon.GetComponent<SpriteRenderer>().enabled = true;
+            weapon.GetComponent<Animator>().enabled = true;
+            weapon.GetComponent<Weapon>().enabled = true;
+        }
+        else
+        {
+            weapon.GetComponent<SpriteRenderer>().enabled = false;
+            weapon.GetComponent<Animator>().enabled = false;
+            weapon.GetComponent<Weapon>().enabled = false;
         }
 
-        // Copy the animation controller to the player's weapon holder
-        Animator holderAnimator = weaponHolder.GetComponent<Animator>();
-        if (holderAnimator != null && weaponAnimator != null)
-        {
-            holderAnimator.runtimeAnimatorController = weaponAnimator.runtimeAnimatorController;
-        }
     }
 }
-
-
-
